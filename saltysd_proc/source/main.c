@@ -138,6 +138,7 @@ void hijack_pid(u64 pid)
         else
         {
             SaltySD_printf("SaltySD: debug event %x, passing...\n", eventinfo.type);
+            svcCloseHandle(debug);
             continue;
         }
     }
