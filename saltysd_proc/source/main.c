@@ -134,15 +134,15 @@ void hijack_pid(u64 pid)
                 SaltySD_printf("SaltySD: TID %016llx is a system application, aborting bootstrap...\n", eventinfo.tid);
                 goto abort_bootstrap;
             }
+
         }
         else
         {
-            SaltySD_printf("SaltySD: debug event %x, passing...\n", eventinfo.type);
-            svcCloseHandle(debug);
+            SaltySD_printf("SaltySD: debug event %x, passing...\n", eventinfo.type);;
             continue;
         }
     }
-
+    svcCloseHandle(debug)
     hijack_bootstrap(&debug, pid, tids[0]);
     
     free(tids);
