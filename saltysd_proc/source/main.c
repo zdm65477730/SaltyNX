@@ -141,7 +141,7 @@ void hijack_pid(u64 pid)
             continue;
         }
     }
-    svcCloseHandle(debug)
+    svcCloseHandle(debug);
     hijack_bootstrap(&debug, pid, tids[0]);
     
     free(tids);
