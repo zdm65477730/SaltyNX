@@ -458,4 +458,3 @@ fail:
 	SaltySDCore_printf("SaltySD Core: failed with retcode %x\n", ret);
 	__libnx_exit(0);
 }
-

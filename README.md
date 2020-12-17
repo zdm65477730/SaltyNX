@@ -16,9 +16,7 @@ For additional functions you need SaltyNX-Tool
 
 https://github.com/masagrator/SaltyNX-Tool
 
-Tests were done on FW 7.0.1-10.2.0, Atmosphere 0.9.1-0.9.4, 0.10.1-0.10.4, 0.11.1-0.13.0, 0.14.4
-
-It should work with ReinX too.
+Tests were done on FW 7.0.1-10.2.0, Atmosphere 0.9.1-0.9.4, 0.10.1-0.10.4, 0.11.1-0.13.0, 0.14.4-M.15.0
 
 SX OS older than 2.9 are not working. Tested only on sysNAND 9.0.0, 2.9.2
 
@@ -26,6 +24,7 @@ No technical support for:
 - Atmosphere forks
 - SX OS
 - Kosmos
+- ReinX
 
 Known issues:
 - Instability with some homebrews and sysmodules,
@@ -41,8 +40,6 @@ For Atmosphere <=0.9.4 and any other CFW rename `contents` folder to `titles`
 
 For SX OS remember to rename `atmosphere` folder to `sxos`
 
-For ReinX remember to rename `atmosphere` folder to `reinx`
-
 Remember to restart Switch
 
 ---
@@ -57,6 +54,8 @@ List of titles not compatible with plugins/patches:
 | Goat Simulator | all | 32-bit game, not supported |
 | Grandia Collection | all | Only launcher is 64-bit, games are 32-bit |
 | Grid: Autosport | plugins | Heap related |
+| Immortals Fenyx Rising | plugins | Heap related |
+| LIMBO | all | 32-bit game, not supported |
 | Little Busters! Converted Edition | plugins | Heap related |
 | Luigi's Mansion 3 | plugins | Heap related |
 | Mario Kart 8 | all | 32-bit game, not supported |
