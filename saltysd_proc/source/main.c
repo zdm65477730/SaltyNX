@@ -26,6 +26,8 @@ bool already_hijacking = false;
 DebugEventInfo eventinfo;
 bool check = false;
 u64 exception = 0x0;
+SharedMemory _sharedMemory = {};
+size_t reservedSharedMemory = 0;
 
 void __libnx_initheap(void)
 {
@@ -469,6 +471,40 @@ Result handleServiceCmd(int cmd)
 
 		ret = 0;
 	}
+	else if (cmd == 6) // GetSharedMemory
+	{		
+		SaltySD_printf("SaltySD: cmd 6 handler\n");
+		IpcParsedCommand r = {0};
+		ipcParse(&r);
+
+		struct {
+			u64 magic;
+			u64 cmd_id;
+			u64 size;
+		} *resp = r.Raw;
+
+		struct {
+			u64 magic;
+			u64 result;
+			u64 offset;
+		} *raw;
+
+		raw = ipcPrepareHeader(&c, sizeof(*raw));
+
+		raw->magic = SFCO_MAGIC;
+		if (resp->size < (_sharedMemory.size - reservedSharedMemory)) {
+			raw->offset = reservedSharedMemory;
+			raw->result = 0;
+			reservedSharedMemory += resp->size;
+			ipcSendHandleCopy(&c, _sharedMemory.handle);
+		}
+		else {
+			raw->offset = 0;
+			raw->result = 0xFFE;
+		}
+
+		return 0;
+	}
 	else if (cmd == 9) // Exception
 	{
 		IpcParsedCommand r = {0};
@@ -657,6 +693,8 @@ int main(int argc, char *argv[])
 	// For some reason, we only have one session maximum (0 reslimit handle related?)	
 	svcManageNamedPort(&saltyport, "SaltySD", 1);
 	svcManageNamedPort(&injectserv, "InjectServ", 1);
+
+	shmemCreate(&_sharedMemory, 0x1000, Perm_Rw, Perm_Rw);
 
 	// Main service loop
 	u64* pids = malloc(0x200 * sizeof(u64));
