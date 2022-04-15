@@ -336,7 +336,7 @@ Result SaltySD_print(char* out)
 	return ret;
 }
 
-Result SaltySD_GetSharedMemory(Handle *retrieve, ptrdiff_t *offset, u64 size)
+Result SaltySD_CheckIfSharedMemoryAvailable(ptrdiff_t *offset, u64 size)
 {
 	Result ret = 0;
 
@@ -374,9 +374,51 @@ Result SaltySD_GetSharedMemory(Handle *retrieve, ptrdiff_t *offset, u64 size)
 		
 		if (!ret)
 		{
+			*offset = resp->offset;
+		}
+	}
+	
+	return ret;
+}
+
+Result SaltySD_GetSharedMemoryHandle(Handle *retrieve)
+{
+	Result ret = 0;
+
+	// Send a command
+	IpcCommand c;
+	ipcInitialize(&c);
+	ipcSendPid(&c);
+
+	struct {
+		u64 magic;
+		u64 cmd_id;
+		u32 reserved[4];
+	} *raw;
+
+	raw = ipcPrepareHeader(&c, sizeof(*raw));
+
+	raw->magic = SFCI_MAGIC;
+	raw->cmd_id = 7;
+
+	ret = ipcDispatch(saltysd);
+
+	if (R_SUCCEEDED(ret)) {
+		IpcParsedCommand r;
+		ipcParse(&r);
+
+		struct {
+			u64 magic;
+			u64 result;
+			u64 reserved[2];
+		} *resp = r.Raw;
+
+		ret = resp->result;
+		
+		if (!ret)
+		{
 			SaltySDCore_printf("SaltySD Core: got SharedMemory handle %x\n", r.Handles[0]);
 			*retrieve = r.Handles[0];
-			*offset = resp->offset;
 		}
 	}
 	

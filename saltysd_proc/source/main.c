@@ -84,6 +84,8 @@ void hijack_bootstrap(Handle* debug, u64 pid, u64 tid)
 {
 	ThreadContext context;
 	Result ret;
+
+	reservedSharedMemory = 0;
 	
 	ret = svcGetDebugThreadContext(&context, *debug, tid, RegisterGroup_All);
 	if (ret)
@@ -471,7 +473,7 @@ Result handleServiceCmd(int cmd)
 
 		ret = 0;
 	}
-	else if (cmd == 6) // GetSharedMemory
+	else if (cmd == 6) // CheckIfSharedMemoryAvailable
 	{		
 		SaltySD_printf("SaltySD: cmd 6 handler\n");
 		IpcParsedCommand r = {0};
@@ -492,11 +494,10 @@ Result handleServiceCmd(int cmd)
 		raw = ipcPrepareHeader(&c, sizeof(*raw));
 
 		raw->magic = SFCO_MAGIC;
-		if (resp->size < (_sharedMemory.size - reservedSharedMemory)) {
+		if ((_sharedMemory.handle) && (resp->size < (_sharedMemory.size - reservedSharedMemory))) {
 			raw->offset = reservedSharedMemory;
 			raw->result = 0;
 			reservedSharedMemory += resp->size;
-			ipcSendHandleCopy(&c, _sharedMemory.handle);
 		}
 		else {
 			raw->offset = 0;
@@ -504,6 +505,12 @@ Result handleServiceCmd(int cmd)
 		}
 
 		return 0;
+	}
+	else if (cmd == 7) // GetSharedMemoryHandle
+	{
+		SaltySD_printf("SaltySD: cmd 7 handler\n");
+
+		ipcSendHandleCopy(&c, _sharedMemory.handle);
 	}
 	else if (cmd == 9) // Exception
 	{
