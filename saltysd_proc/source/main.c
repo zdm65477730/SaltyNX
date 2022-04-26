@@ -480,13 +480,13 @@ Result handleServiceCmd(int cmd)
 		}
 		else {
 			SaltySD_printf("SaltySD: cmd 6 failed.\n");
-			SaltySD_printf("SaltySD: cmd 6 handle: 0x%x\n", _sharedMemory.handle);
-			SaltySD_printf("SaltySD: cmd 6 resp->size: %d\n", resp->size);
-			SaltySD_printf("SaltySD: cmd 6 _sharedMemory.size: %d\n", _sharedMemory.size);
-			SaltySD_printf("SaltySD: cmd 6 reservedSharedMemory: %d\n", reservedSharedMemory);
 			raw->offset = 0;
 			raw->result = 0xFFE;
 		}
+		SaltySD_printf("SaltySD: cmd 6 handle: 0x%x\n", _sharedMemory.handle);
+		SaltySD_printf("SaltySD: cmd 6 resp->size: %d\n", resp->size);
+		SaltySD_printf("SaltySD: cmd 6 _sharedMemory.size: %d\n", _sharedMemory.size);
+		SaltySD_printf("SaltySD: cmd 6 reservedSharedMemory: %d\n", reservedSharedMemory);
 
 		return 0;
 	}
