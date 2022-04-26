@@ -156,11 +156,7 @@ void hijack_pid(u64 pid)
 	char exceptions[20];
 	char line[20];
 	char titleidnum[20];
-	char titleidnumn[20];
-	char titleidnumrn[20];
 	char titleidnumF[20];
-	char titleidnumnF[20];
-	char titleidnumrnF[20];
 
 	while (1)
 	{
@@ -208,38 +204,20 @@ void hijack_pid(u64 pid)
 			}
 			
 			snprintf(titleidnum, sizeof titleidnum, "%016"PRIx64, eventinfo.tid);
-			snprintf(titleidnumn, sizeof titleidnumn, "%016"PRIx64"\n", eventinfo.tid);
-			snprintf(titleidnumrn, sizeof titleidnumrn, "%016"PRIx64"\r\n", eventinfo.tid);
 			snprintf(titleidnumF, sizeof titleidnumF, "X%016"PRIx64, eventinfo.tid);
-			snprintf(titleidnumnF, sizeof titleidnumnF, "X%016"PRIx64"\n", eventinfo.tid);
-			snprintf(titleidnumrnF, sizeof titleidnumrnF, "X%016"PRIx64"\r\n", eventinfo.tid);
 			
 			FILE* except = fopen("sdmc:/SaltySD/exceptions.txt", "r");
 			if (except) {
 				while (fgets(line, sizeof(line), except)) {
 					snprintf(exceptions, sizeof exceptions, "%s", line); 
-					int thesame = strcasecmp(exceptions, titleidnum);
-					int thesame2 = strcasecmp(exceptions, titleidnumn);
-					int thesame3 = strcasecmp(exceptions, titleidnumrn);
-					int thesame4 = strcasecmp(exceptions, titleidnumF);
-					int thesame5 = strcasecmp(exceptions, titleidnumnF);
-					int thesame6 = strcasecmp(exceptions, titleidnumrnF);
-					if ((thesame4 == 0) || (thesame5 == 0) || (thesame6 == 0)) {
+					if (!strncasecmp(exceptions, titleidnumF, 16)) {
 						SaltySD_printf("SaltySD: TID %016llx is forced in exceptions.txt, aborting bootstrap...\n", eventinfo.tid);
 						fclose(except);
 						goto abort_bootstrap;
 					}
-					else if ((thesame == 0) || (thesame2 == 0) || (thesame3 == 0)) {
+					else if (!strncasecmp(exceptions, titleidnum, 16)) {
 						SaltySD_printf("SaltySD: TID %016llx is in exceptions.txt, aborting loading plugins...\n", eventinfo.tid);
 						exception = 0x1;
-					}
-					else {
-						thesame = 0;
-						thesame2 = 0;
-						thesame3 = 0;
-						thesame4 = 0;
-						thesame5 = 0;
-						thesame6 = 0;
 					}
 				}
 				fclose(except);
@@ -483,6 +461,7 @@ Result handleServiceCmd(int cmd)
 			u64 magic;
 			u64 cmd_id;
 			u64 size;
+			u32 reserved[2];
 		} *resp = r.Raw;
 
 		struct {
@@ -494,12 +473,17 @@ Result handleServiceCmd(int cmd)
 		raw = ipcPrepareHeader(&c, sizeof(*raw));
 
 		raw->magic = SFCO_MAGIC;
-		if ((_sharedMemory.handle) && (resp->size < (_sharedMemory.size - reservedSharedMemory))) {
+		if (resp->size < (_sharedMemory.size - reservedSharedMemory)) {
 			raw->offset = reservedSharedMemory;
 			raw->result = 0;
 			reservedSharedMemory += resp->size;
 		}
 		else {
+			SaltySD_printf("SaltySD: cmd 6 failed.\n");
+			SaltySD_printf("SaltySD: cmd 6 handle: 0x%x\n", _sharedMemory.handle);
+			SaltySD_printf("SaltySD: cmd 6 resp->size: %d\n", resp->size);
+			SaltySD_printf("SaltySD: cmd 6 _sharedMemory.size: %d\n", _sharedMemory.size);
+			SaltySD_printf("SaltySD: cmd 6 reservedSharedMemory: %d\n", reservedSharedMemory);
 			raw->offset = 0;
 			raw->result = 0xFFE;
 		}
