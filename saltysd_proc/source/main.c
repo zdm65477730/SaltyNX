@@ -453,7 +453,6 @@ Result handleServiceCmd(int cmd)
 	}
 	else if (cmd == 6) // CheckIfSharedMemoryAvailable
 	{		
-		SaltySD_printf("SaltySD: cmd 6 handler\n");
 		IpcParsedCommand r = {0};
 		ipcParse(&r);
 
@@ -464,6 +463,10 @@ Result handleServiceCmd(int cmd)
 			u32 reserved[2];
 		} *resp = r.Raw;
 
+		u64 new_size = resp->size;
+
+		SaltySD_printf("SaltySD: cmd 6 handler, size: %d\n", new_size);
+
 		struct {
 			u64 magic;
 			u64 result;
@@ -473,20 +476,16 @@ Result handleServiceCmd(int cmd)
 		raw = ipcPrepareHeader(&c, sizeof(*raw));
 
 		raw->magic = SFCO_MAGIC;
-		if (resp->size < (_sharedMemory.size - reservedSharedMemory)) {
+		if (new_size < (_sharedMemory.size - reservedSharedMemory)) {
 			raw->offset = reservedSharedMemory;
 			raw->result = 0;
-			reservedSharedMemory += resp->size;
+			reservedSharedMemory += new_size;
 		}
 		else {
 			SaltySD_printf("SaltySD: cmd 6 failed.\n");
 			raw->offset = 0;
 			raw->result = 0xFFE;
 		}
-		SaltySD_printf("SaltySD: cmd 6 handle: 0x%x\n", _sharedMemory.handle);
-		SaltySD_printf("SaltySD: cmd 6 resp->size: %d\n", resp->size);
-		SaltySD_printf("SaltySD: cmd 6 _sharedMemory.size: %d\n", _sharedMemory.size);
-		SaltySD_printf("SaltySD: cmd 6 reservedSharedMemory: %d\n", reservedSharedMemory);
 
 		return 0;
 	}
