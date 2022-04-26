@@ -336,7 +336,7 @@ Result SaltySD_print(char* out)
 	return ret;
 }
 
-Result SaltySD_CheckIfSharedMemoryAvailable(ptrdiff_t *offset, u64 size)
+Result SaltySD_CheckIfSharedMemoryAvailable(ptrdiff_t *new_offset, u64 new_size)
 {
 	Result ret = 0;
 
@@ -356,7 +356,7 @@ Result SaltySD_CheckIfSharedMemoryAvailable(ptrdiff_t *offset, u64 size)
 
 	raw->magic = SFCI_MAGIC;
 	raw->cmd_id = 6;
-	raw->size = size;
+	raw->size = new_size;
 
 	ret = ipcDispatch(saltysd);
 
@@ -374,7 +374,7 @@ Result SaltySD_CheckIfSharedMemoryAvailable(ptrdiff_t *offset, u64 size)
 		
 		if (!ret)
 		{
-			*offset = resp->offset;
+			*new_offset = resp->offset;
 		}
 	}
 	
