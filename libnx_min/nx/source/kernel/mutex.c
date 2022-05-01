@@ -4,7 +4,6 @@
 #include "runtime/threadvars.h"
 
 #define HAS_LISTENERS 0x40000000
-#define HANDLE_WAIT_MASK 0x40000000u
 
 static u32 _GetTag(void) {
     return getThreadVars()->handle;
@@ -93,11 +92,4 @@ void rmutexUnlock(RMutex* m) {
         m->thread_tag = 0;
         mutexUnlock(&m->lock);
     }
-}
-
-bool mutexIsLockedByCurrentThread(const Mutex* m) {
-    // Get the current thread handle.
-    const u32 cur_handle = _GetTag();
-
-    return (*m & ~HANDLE_WAIT_MASK) == cur_handle;
 }
