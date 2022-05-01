@@ -482,6 +482,8 @@ Result handleServiceCmd(int cmd)
 		}
 		else if (new_size < (_sharedMemory.size - reservedSharedMemory)) {
 			if (!shmemMap(&_sharedMemory)) {
+				if (!reservedSharedMemory)
+					memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
 				uint16_t* block_size = (uint16_t*)shmemGetAddr(&_sharedMemory) + reservedSharedMemory;
 				*block_size = new_size;
 				raw->offset = reservedSharedMemory + 2;
