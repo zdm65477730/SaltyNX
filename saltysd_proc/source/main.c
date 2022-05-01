@@ -210,7 +210,7 @@ void hijack_pid(u64 pid)
 			if (except) {
 				while (fgets(line, sizeof(line), except)) {
 					snprintf(exceptions, sizeof exceptions, "%s", line); 
-					if (!strncasecmp(exceptions, titleidnumF, 17)) {
+					if (!strncasecmp(exceptions, titleidnumF, 16)) {
 						SaltySD_printf("SaltySD: TID %016llx is forced in exceptions.txt, aborting bootstrap...\n", eventinfo.tid);
 						fclose(except);
 						goto abort_bootstrap;
@@ -476,13 +476,27 @@ Result handleServiceCmd(int cmd)
 		raw = ipcPrepareHeader(&c, sizeof(*raw));
 
 		raw->magic = SFCO_MAGIC;
-		if (new_size < (_sharedMemory.size - reservedSharedMemory)) {
-			raw->offset = reservedSharedMemory;
+		if (!new_size) {
+			raw->offset = 0;
 			raw->result = 0;
-			reservedSharedMemory += new_size;
+		}
+		else if (new_size < (_sharedMemory.size - reservedSharedMemory)) {
+			if (!shmemMap(&_sharedMemory)) {
+				uint16_t* block_size = (uint16_t*)shmemGetAddr(&_sharedMemory) + reservedSharedMemory;
+				*block_size = new_size;
+				raw->offset = reservedSharedMemory + 2;
+				raw->result = 0;
+				reservedSharedMemory += new_size + 2;
+				shmemUnmap(&_sharedMemory);
+			}
+			else {
+				SaltySD_printf("SaltySD: cmd 6 failed. shmemMap error.");
+				raw->offset = 0;
+				raw->result = 0xFFE;
+			}
 		}
 		else {
-			SaltySD_printf("SaltySD: cmd 6 failed.\n");
+			SaltySD_printf("SaltySD: cmd 6 failed. Not enough free space. Left: %d\n", (_sharedMemory.size - reservedSharedMemory));
 			raw->offset = 0;
 			raw->result = 0xFFE;
 		}
