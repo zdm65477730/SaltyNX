@@ -72,10 +72,3 @@ bool rmutexTryLock(RMutex* m);
  * @param m Recursive mutex object.
  */
 void rmutexUnlock(RMutex* m);
-
-/**
- * @brief Gets whether the current thread owns the mutex.
- * @param m Mutex object.
- * @return 1 if the mutex is locked by the current thread, and 0 otherwise.
- */
-bool mutexIsLockedByCurrentThread(const Mutex* m);
