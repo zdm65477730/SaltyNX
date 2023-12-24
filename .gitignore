@@ -1,0 +1,15 @@
+saltysd_bootstrap/build/
+saltysd_bootstrap/*.elf
+saltysd_core/build/
+saltysd_core/*.elf
+saltysd_proc/build/
+saltysd_proc/data/
+saltysd_proc/*.elf
+saltysd_proc/*.kip
+saltysd_proc/*.nacp
+saltysd_proc/*.npdm
+saltysd_proc/*.nro
+saltysd_proc/*.nso
+saltysd_proc/*.nsp
+saltysd_proc/*.pfs0
+sdcard_out/
