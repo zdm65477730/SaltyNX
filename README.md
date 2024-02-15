@@ -58,6 +58,7 @@ Remember to restart Switch
 | Company of Heroes Collection | plugins | heap related |
 | DEADLY PREMONITION Origins | all | 32-bit game, not supported |
 | Dies irae Amantes amentes For Nintendo Switch | all | 32-bit game, not supported |
+| Donkey Kong Country: Tropical Freeze | all | From second level heap issues |
 | EA SPORTS FC 24 | plugins | heap related |
 | Goat Simulator | all | 32-bit game, not supported |
 | Gothic | all | 32-bit game, not supported |

@@ -307,6 +307,7 @@ struct Object {
 	void* rela_or_rel_plt;
 	void* rela_or_rel;
 	void* module_base;
+	void* module_base_new;
 };
 
 struct Module {
@@ -336,7 +337,9 @@ Result LoadModule(struct Module* pOutModule, const void* pImage, void* buffer, s
 	Result ret = ((_ZN2nn2ro10LoadModuleEPNS0_6ModuleEPKvPvmi)(roLoadModule))(pOutModule, pImage, buffer, bufferSize, flag);
 	if (R_SUCCEEDED(ret)) {
 		for (int x = 0; x < num_replaced_symbols; x++) {
-			SaltySDCore_ReplaceModuleImport(pOutModule->ModuleObject->module_base, replaced_symbols[x].name, replaced_symbols[x].address, true);
+			if (pOutModule->ModuleObject->module_base)
+				SaltySDCore_ReplaceModuleImport(pOutModule->ModuleObject->module_base, replaced_symbols[x].name, replaced_symbols[x].address, true);
+			else SaltySDCore_ReplaceModuleImport(pOutModule->ModuleObject->module_base_new, replaced_symbols[x].name, replaced_symbols[x].address, true);
 		}
 	}
 	return ret;
