@@ -582,7 +582,7 @@ Result handleServiceCmd(int cmd)
 					comp_address = module_infos[itr].base_address;
 					continue;
 				}
-				if ((module_infos[itr].base_address - comp_address == 0x4000) || (module_infos[itr].base_address - comp_address == 0x6000)) {
+				if ((module_infos[itr].base_address - comp_address == 0x4000) || (module_infos[itr].base_address - comp_address == 0x6000) || (module_infos[itr].base_address - comp_address == 0x5000)) {
 					for (int itr2 = 0; itr2 < 8; itr2++) {
 						*(uint8_t*)((uint64_t)&BID+itr2) = module_infos[itr].build_id[itr2];
 					}
