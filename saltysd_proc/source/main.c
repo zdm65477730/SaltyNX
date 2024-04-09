@@ -205,13 +205,13 @@ void hijack_pid(u64 pid)
 				SaltySD_printf("SaltySD: TID %016lx is a homebrew application, aborting bootstrap...\n", eventinfo.tid);
 				goto abort_bootstrap;
 			}
+			if (!shmemMap(&_sharedMemory)) {
+				memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
+				shmemUnmap(&_sharedMemory);
+			}
 			if (!eventinfo.isA64)
 			{
 				SaltySD_printf("SaltySD: ARM32 applications plugins are not supported, aborting bootstrap...\n");
-				if (!shmemMap(&_sharedMemory)) {
-					memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
-					shmemUnmap(&_sharedMemory);
-				}
 
 				goto abort_bootstrap;
 			}
@@ -231,20 +231,12 @@ void hijack_pid(u64 pid)
 					snprintf(exceptions, sizeof exceptions, "%s", line); 
 					if (!strncasecmp(exceptions, titleidnumX, 17)) {
 						SaltySD_printf("SaltySD: TID %016lx is forced in exceptions.txt, aborting bootstrap...\n", eventinfo.tid);
-						if (!shmemMap(&_sharedMemory)) {
-							memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
-							shmemUnmap(&_sharedMemory);
-						}
 						fclose(except);
 						goto abort_bootstrap;
 					}
 					else if (!strncasecmp(exceptions, titleidnumR, 17)) {
 						if (isModInstalled()) {
 							SaltySD_printf("SaltySD: TID %016lx is in exceptions.txt as romfs excluded, aborting bootstrap...\n", eventinfo.tid);
-							if (!shmemMap(&_sharedMemory)) {
-								memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
-								shmemUnmap(&_sharedMemory);
-							}
 							fclose(except);
 							goto abort_bootstrap;
 						}
@@ -252,10 +244,6 @@ void hijack_pid(u64 pid)
 					}
 					else if (!strncasecmp(exceptions, titleidnum, 16)) {
 						SaltySD_printf("SaltySD: TID %016lx is in exceptions.txt, aborting loading plugins...\n", eventinfo.tid);
-						if (!shmemMap(&_sharedMemory)) {
-							memset(shmemGetAddr(&_sharedMemory), 0, 0x1000);
-							shmemUnmap(&_sharedMemory);
-						}
 						exception = 0x1;
 					}
 				}
