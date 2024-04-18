@@ -644,7 +644,7 @@ void nvnPresentTexture(const void* _this, const NVNWindow* nvnWindow, const void
 	*(Shared.FPSavg) = Stats.FPSavg;
 	*(Shared.pluginActive) = true;
 
-	if (FPSlock != *(Shared.FPSlocked)) {
+	if (FPSlock != *(Shared.FPSlocked) || (*(Shared.FPSlocked) > 30 && *(Shared.FPSmode) > 1)) {
 		changeFPS = true;
 		changedFPS = false;
 		if (*(Shared.FPSlocked) == 0) {
