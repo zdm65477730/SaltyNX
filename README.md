@@ -21,7 +21,7 @@ For additional functions you need SaltyNX-Tool
 
 https://github.com/masagrator/SaltyNX-Tool
 
-Tests were done on FW 7.0.1-16.1.0 with Atmosphere up to 1.5.5
+Tests were done on FW 7.0.1-18.0.1 with Atmosphere up to 1.7.0
 
 No technical support for:
 - Atmosphere forks
