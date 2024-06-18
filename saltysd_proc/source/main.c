@@ -28,6 +28,11 @@ bool check = false;
 u64 exception = 0x0;
 SharedMemory _sharedMemory = {};
 size_t reservedSharedMemory = 0;
+uint64_t clkVirtAddr = 0;
+bool displaySync = false;
+uint8_t refreshRate = 0;
+s64 lastAppPID = -1;
+bool isOLED = false;
 
 void __libnx_initheap(void)
 {
@@ -53,6 +58,27 @@ void __appExit(void)
 
 u64 TIDnow;
 u64 PIDnow;
+
+//Writing only one byte to 0xD1 results in breaking all 4 bytes from 0xD0 to 0xD3. 
+bool SetDisplayRefreshRate(uint32_t refreshRate) {
+	if (!clkVirtAddr)
+		return false;
+	if (refreshRate > 79 || refreshRate < 31)
+		return false;
+	uint32_t value = *(uint32_t*)(clkVirtAddr + 0xD0) & 0xFFFF00FF;
+	*(uint32_t*)(clkVirtAddr + 0xD0) = value | ((refreshRate << 12) / 5);
+	return true;
+}
+
+bool GetDisplayRefreshRate(uint32_t* refreshRate) {
+	if (!clkVirtAddr)
+		return false;
+	uint32_t value = (*(uint8_t*)(clkVirtAddr + 0xD1) * 10) >> 5;
+	if (value > 79 || value < 31)
+		return false;
+	*refreshRate = value;
+	return true;
+}
 
 void renameCheatsFolder() {
 	char* cheatspath = (char*)malloc(0x40);
@@ -277,6 +303,7 @@ void hijack_pid(u64 pid)
 	renameCheatsFolder();
 	
 	hijack_bootstrap(&debug, pid, tids[0]);
+	lastAppPID = pid;
 	
 	free(tids);
 	return;
@@ -617,6 +644,88 @@ Result handleServiceCmd(int cmd)
 
 		return 0;
 	}
+	else if (cmd == 10) // GetDisplayRefreshRate
+	{
+		IpcParsedCommand r = {0};
+		ipcParse(&r);
+
+		SaltySD_printf("SaltySD: cmd 10 handler\n");
+		
+		// Ship off results
+		struct {
+			u64 magic;
+			u64 result;
+			u64 refreshRate;
+			u64 reserved[2];
+		} *raw;
+
+		raw = ipcPrepareHeader(&c, sizeof(*raw));
+
+		raw->magic = SFCO_MAGIC;
+		raw->refreshRate = 0;
+		if (clkVirtAddr) {
+			uint16_t basic_value = *(uint8_t*)(clkVirtAddr + 0xD1);
+			raw->refreshRate = (basic_value * 10) / 32;
+			raw->result = 0;
+		}
+		else raw->result = 1;
+
+		return 0;
+	}
+	else if (cmd == 11) // SetDisplayRefreshRate
+	{
+		IpcParsedCommand r = {0};
+		ipcParse(&r);
+
+		struct {
+			u64 magic;
+			u64 cmd_id;
+			u64 refreshRate;
+			u64 reserved;
+		} *resp = r.Raw;
+
+		u64 refreshRate_temp = resp -> refreshRate;
+
+		if (refreshRate_temp > 79 || refreshRate_temp < 31) {
+			SaltySD_printf("SaltySD: cmd 11 handler -> %d, invalid value. Setting 60...\n", refreshRate_temp);
+			refreshRate = 60;
+		}
+		else {
+			SaltySD_printf("SaltySD: cmd 11 handler -> %d\n", refreshRate_temp);
+			refreshRate = refreshRate_temp;
+		}
+		if (SetDisplayRefreshRate(refreshRate)) 
+			ret = 0;
+		else ret = 0x1234;
+	}
+	else if (cmd == 12) // SetDisplaySync
+	{
+		IpcParsedCommand r = {0};
+		ipcParse(&r);
+
+		struct {
+			u64 magic;
+			u64 cmd_id;
+			u64 value;
+			u64 reserved;
+		} *resp = r.Raw;
+
+		displaySync = (bool)(resp -> value);
+		if (!isOLED && displaySync) {
+			FILE* file = fopen("sdmc:/SaltySD/flags/displaysync.flag", "wb");
+			fclose(file);
+			SaltySD_printf("SaltySD: cmd 12 handler -> %d\n", displaySync);
+		}
+		else if (isOLED) {
+			SaltySD_printf("SaltySD: cmd 12 handler -> %d. Detected OLED model, ignoring...\n", displaySync);
+			remove("sdmc:/SaltySD/flags/displaysync.flag");
+		}
+		else {
+			remove("sdmc:/SaltySD/flags/displaysync.flag");
+		}
+
+		ret = 0;
+	}
 	else
 	{
 		ret = 0xEE01;
@@ -788,13 +897,33 @@ int main(int argc, char *argv[])
 	fsdevMountDevice("sdmc", sdcardfs);
 	SaltySD_printf("SaltySD: got SD card.\n");
 
+	setsysInitialize();
+	SetSysProductModel model;
+	if (R_SUCCEEDED(setsysGetProductModel(&model))) {
+		if (model == SetSysProductModel_Aula) {
+			SaltySD_printf("SaltySD: Detected OLED model. Display Sync is not available.\n");
+			isOLED = true;
+			remove("sdmc:/SaltySD/flags/displaysync.flag");
+		}
+	}
+	setsysExit();
+	FILE* file = fopen("sdmc:/SaltySD/flags/displaysync.flag", "rb");
+	if (file) {
+		fclose(file);
+		displaySync = true;
+	}
 	// Start our port
 	// For some reason, we only have one session maximum (0 reslimit handle related?)	
 	svcManageNamedPort(&saltyport, "SaltySD", 1);
 	svcManageNamedPort(&injectserv, "InjectServ", 1);
 
+	uint64_t dummy = 0;
+	Result rc = svcQueryMemoryMapping(&clkVirtAddr, &dummy, 0x60006000, 0x1000);
+	if (R_FAILED(rc)) {
+		SaltySD_printf("SaltySD: Retrieving virtual address for 0x60006000 failed. RC: 0x%x.\n", rc);
+		clkVirtAddr = 0;
+	}
 	shmemCreate(&_sharedMemory, 0x1000, Perm_Rw, Perm_Rw);
-
 	// Main service loop
 	u64* pids = malloc(0x200 * sizeof(u64));
 	u64 max = 0;
@@ -809,6 +938,30 @@ int main(int argc, char *argv[])
 			if (pids[i] > max)
 			{
 				max = pids[i];
+			}
+		}
+		
+		if (lastAppPID != -1) {
+			bool found = false;
+			for (int i = num - 1; lastAppPID <= pids[i]; i--)
+			{
+				if (pids[i] == lastAppPID)
+				{	
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				lastAppPID = -1;
+				if (displaySync && !isOLED) {
+					SetDisplayRefreshRate(60);
+					refreshRate = 0;
+				}
+			}
+			else if (displaySync && !isOLED) {
+				uint32_t temp_refreshRate = 0;
+				if (GetDisplayRefreshRate(&temp_refreshRate) && temp_refreshRate != refreshRate)
+					SetDisplayRefreshRate(refreshRate);
 			}
 		}
 
@@ -830,7 +983,7 @@ int main(int argc, char *argv[])
 			svcCloseHandle(sesja);
 		}
 
-		svcSleepThread(50*1000*1000);
+		svcSleepThread(10*1000*1000);
 	}
 	free(pids);
 	

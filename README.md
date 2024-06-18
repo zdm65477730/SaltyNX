@@ -21,7 +21,7 @@ For additional functions you need SaltyNX-Tool
 
 https://github.com/masagrator/SaltyNX-Tool
 
-Tests were done on FW 7.0.1-18.0.1 with Atmosphere up to 1.7.0
+It is required to have FW installed at least 10.0.0 version
 
 No technical support for:
 - Atmosphere forks
@@ -46,6 +46,9 @@ For SX OS remember to rename `atmosphere` folder to `sxos`
 Remember to restart Switch
 
 ---
+
+# Thanks to
+- `Cooler3D` for developing and releasing publicly first tool allowing changing refresh rate of display in HOS. Code for changing refresh rate in SaltyNX is based on reverse engineered code from his tool.
 
 # List of titles not compatible with plugins/patches
 
