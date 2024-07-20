@@ -151,3 +151,37 @@ Result apmGetPerformanceConfiguration(u32 PerformanceMode, u32 *PerformanceConfi
     return rc;
 }
 
+Result apmGetPerformanceMode(ApmPerformanceMode* out_performanceMode) {
+    IpcCommand c;
+    ipcInitialize(&c);
+
+    struct {
+        u64 magic;
+        u64 cmd_id;
+        u32 reserved;
+    } *raw;
+
+    raw = ipcPrepareHeader(&c, sizeof(*raw));
+
+    raw->magic = SFCI_MAGIC;
+    raw->cmd_id = 1;
+
+    Result rc = serviceIpcDispatch(&g_apmSrv);
+
+    if (R_SUCCEEDED(rc)) {
+        IpcParsedCommand r;
+        ipcParse(&r);
+
+        struct {
+            u64 magic;
+            u64 result;
+            u32 PerformanceMode;
+        } *resp = r.Raw;
+
+        rc = resp->result;
+
+        if (R_SUCCEEDED(rc) && out_performanceMode) *out_performanceMode = resp->PerformanceMode;
+    }
+
+    return rc;
+}

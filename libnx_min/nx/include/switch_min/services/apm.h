@@ -15,9 +15,22 @@ typedef enum {
     ApmCpuBoostMode_Type2    = 2,  ///< Use performance configurations 0x9222000B and 0x9222000C.
 } ApmCpuBoostMode;
 
+/// PerformanceMode
+typedef enum {
+    ApmPerformanceMode_Invalid = -1,  ///< Invalid
+    ApmPerformanceMode_Normal  = 0,   ///< Normal
+    ApmPerformanceMode_Boost   = 1,   ///< Boost
+} ApmPerformanceMode;
+
 Result apmInitialize(void);
 void apmExit(void);
 Service* apmGetServiceSession(void);
 
 Result apmSetPerformanceConfiguration(u32 PerformanceMode, u32 PerformanceConfiguration);
 Result apmGetPerformanceConfiguration(u32 PerformanceMode, u32 *PerformanceConfiguration);
+
+/**
+ * @brief Gets the current ApmPerformanceMode.
+ * @param[out] out_performanceMode ApmPerformanceMode
+ */
+Result apmGetPerformanceMode(ApmPerformanceMode* out_performanceMode);

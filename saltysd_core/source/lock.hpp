@@ -10,6 +10,7 @@ namespace LOCK {
 	bool blockDelayFPS = false;
 	uint8_t gen = 0;
 	bool MasterWriteApplied = false;
+	double overwriteRefreshRate = 0;
 
 	struct {
 		int64_t main_start;
@@ -135,7 +136,8 @@ namespace LOCK {
 		gen = buffer[4];
 		if (gen < 1 || gen > 2)
 			return false;
-		if (*(uint16_t*)(&(buffer[5])) != 0)
+		uint16_t ALL_FPS = *(uint16_t*)(&(buffer[5]));
+		if (ALL_FPS > 1)
 			return false;
 		if (buffer[7] > 1)
 			return false;
@@ -143,17 +145,19 @@ namespace LOCK {
 		uint8_t start_offset = 0x30;
 		if (gen == 2)
 			start_offset += 4;
+		if (ALL_FPS)
+			start_offset += 0x10;
 		if (*(uint32_t*)(&(buffer[8])) != start_offset)
 			return false;
 		return true;
 
 	}
 
-	Result applyMasterWrite(FILE* file, size_t filesize) {
+	Result applyMasterWrite(FILE* file, size_t filesize, size_t master_offset) {
 		uint32_t offset = 0;
 		if (gen != 2) return 0x311;
 
-		SaltySDCore_fseek(file, 0x30, 0);
+		SaltySDCore_fseek(file, master_offset, 0);
 		SaltySDCore_fread(&offset, 4, 1, file);
 		SaltySDCore_fseek(file, offset, 0);
 		if (SaltySDCore_ftell(file) != offset)
@@ -216,9 +220,16 @@ namespace LOCK {
 		}
 	}
 
-	Result applyPatch(uint8_t* buffer, size_t filesize, uint8_t FPS) {
+	Result applyPatch(uint8_t* buffer, size_t filesize, uint8_t FPS, uint8_t refreshRate = 0) {
+		uint8_t orig_FPS = FPS;
+		bool setRefreshRate = false;
+		overwriteRefreshRate = 0;
 		FPS -= 15;
 		FPS /= 5;
+		if (refreshRate == orig_FPS && orig_FPS >= 40 && orig_FPS <= 55 && *(uint32_t*)(&buffer[8]) > 0x34) {
+			FPS += 5;
+			setRefreshRate = true;
+		}
 		FPS *= 4;
 		blockDelayFPS = false;
 		offset = *(uint32_t*)(&buffer[FPS+8]);
@@ -285,6 +296,11 @@ namespace LOCK {
 						}
 						break;
 					}
+					case 0x38:
+						for (uint8_t i = 0; i < loops; i++) {
+							overwriteRefreshRate = readDouble(buffer);
+							address += 8;
+						}						
 					default:
 						return 3;
 				}
@@ -416,11 +432,18 @@ namespace LOCK {
 						}
 						break;
 					}
+					case 0x38:
+						for (uint8_t i = 0; i < loops; i++) {
+							uint64_t valueDouble = read64(buffer);
+							if (passed) writeValue(valueDouble, (uint64_t)&overwriteRefreshRate);
+							address += 8;
+						}
+						break;						
 					default:
 						return 3;
 				}
 			}
-			else if (OPCODE == 3) {
+			else if (OPCODE == 3 && !setRefreshRate) {
 				switch(read8(buffer)) {
 					case 1:
 						blockDelayFPS = true;
