@@ -495,15 +495,23 @@ int main(int argc, char *argv[])
 		shmemMapRc = shmemMap(&_sharedmemory);
 		if (R_SUCCEEDED(shmemMapRc)) {
 			NX_FPS(&_sharedmemory);
-			ReverseNX(&_sharedmemory);
+
+			uint64_t titid = 0;
+			svcGetInfo(&titid, 18, CUR_PROCESS_HANDLE, 0);
+
+			if (tid == 0x01008CF01BAAC000) {
+				SaltySDCore_printf("SaltySD Core: Detected \"The Legend of Zelda: Echoes of Wisdom\", disabling ReverseNX-RT...\n", ret);
+			}
+			else ReverseNX(&_sharedmemory);
+
 			if (SaltySDCore_isRelrAvailable()) {
-				SaltySDCore_printf("Game is using RELR. Applying hacky solution.\n", ret);
+				SaltySDCore_printf("SaltySD Core: Game is using RELR. Applying hacky solution.\n", ret);
 				Address_weak_QueryMemoryInfo = SaltySDCore_FindSymbolBuiltin("_ZN2nn2os15QueryMemoryInfoEPNS0_10MemoryInfoE");
 				SaltySDCore_ReplaceImport("_ZN2nn2os15QueryMemoryInfoEPNS0_10MemoryInfoE", (void*)QueryMemoryInfo);
 			}
 		}
 		else {
-			SaltySDCore_printf("shmemMap failed: 0x%X\n", shmemMapRc);
+			SaltySDCore_printf("SaltySD Core: shmemMap failed: 0x%X\n", shmemMapRc);
 		}
 	}
 
